@@ -24,7 +24,9 @@ export default function Navbar() {
         <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
           <a
             href="#"
-            className="font-[Playfair_Display] text-lg md:text-xl font-semibold tracking-[0.15em] uppercase text-white"
+            className={`font-[Playfair_Display] text-lg md:text-xl font-semibold tracking-[0.15em] uppercase transition-colors duration-700 ${
+              scrolled ? "text-white" : "text-[#1A1A1A]"
+            }`}
           >
             Saint Voyage
           </a>
@@ -34,7 +36,11 @@ export default function Navbar() {
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
-                className="text-[13px] uppercase tracking-[0.2em] font-medium text-white/60 hover:text-white transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className={`text-[13px] uppercase tracking-[0.2em] font-medium transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                  scrolled
+                    ? "text-white/60 hover:text-white"
+                    : "text-[#1A1A1A]/60 hover:text-[#1A1A1A]"
+                }`}
               >
                 {item}
               </a>
@@ -47,12 +53,12 @@ export default function Navbar() {
             aria-label="Toggle menu"
           >
             <span
-              className={`block w-6 h-[1.5px] bg-white transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-center ${
+              className={`block w-6 h-[1.5px] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-center ${scrolled || menuOpen ? "bg-white" : "bg-[#1A1A1A]"} ${
                 menuOpen ? "rotate-45 translate-y-[3.5px]" : ""
               }`}
             />
             <span
-              className={`block w-6 h-[1.5px] bg-white transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-center ${
+              className={`block w-6 h-[1.5px] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-center ${scrolled || menuOpen ? "bg-white" : "bg-[#1A1A1A]"} ${
                 menuOpen ? "-rotate-45 -translate-y-[3.5px]" : ""
               }`}
             />

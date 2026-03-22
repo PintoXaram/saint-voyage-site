@@ -23,99 +23,108 @@ const scrollSections = [
   },
 ];
 
-const TOTAL_FRAMES = 150;
+const TOTAL_FRAMES = 60;
 
 export default function ScrollVideoSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const framesRef = useRef<ImageBitmap[]>([]);
+  const framesRef = useRef<HTMLCanvasElement[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [framesReady, setFramesReady] = useState(false);
-  const currentFrameRef = useRef(0);
+  const [ready, setReady] = useState(false);
+  const currentFrameRef = useRef(-1);
   const rafRef = useRef<number>(0);
 
-  // Extract all frames from video into memory on load
+  // Extract frames from video into offscreen canvases
   const extractFrames = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || !video.duration) return;
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.src = "/product-video.mp4";
 
-    const offscreen = document.createElement("canvas");
-    offscreen.width = video.videoWidth;
-    offscreen.height = video.videoHeight;
-    const ctx = offscreen.getContext("2d");
-    if (!ctx) return;
+    // Wait for video to be ready
+    await new Promise<void>((resolve, reject) => {
+      video.onloadeddata = () => resolve();
+      video.onerror = () => reject(new Error("Video failed to load"));
+      video.load();
+    });
 
-    const frames: ImageBitmap[] = [];
+    const w = video.videoWidth;
+    const h = video.videoHeight;
     const duration = video.duration;
+    const frames: HTMLCanvasElement[] = [];
 
     for (let i = 0; i < TOTAL_FRAMES; i++) {
       const time = (i / (TOTAL_FRAMES - 1)) * duration;
       video.currentTime = time;
+
+      // Wait for seek with timeout
       await new Promise<void>((resolve) => {
-        const onSeeked = () => {
-          video.removeEventListener("seeked", onSeeked);
+        let resolved = false;
+        const done = () => {
+          if (resolved) return;
+          resolved = true;
+          video.removeEventListener("seeked", done);
           resolve();
         };
-        video.addEventListener("seeked", onSeeked);
+        video.addEventListener("seeked", done);
+        // Timeout fallback — if seeked never fires, continue anyway
+        setTimeout(done, 500);
       });
-      ctx.drawImage(video, 0, 0);
-      const bitmap = await createImageBitmap(offscreen);
-      frames.push(bitmap);
+
+      const offscreen = document.createElement("canvas");
+      offscreen.width = w;
+      offscreen.height = h;
+      const ctx = offscreen.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, w, h);
+      }
+      frames.push(offscreen);
     }
 
     framesRef.current = frames;
-    setFramesReady(true);
 
-    // Draw first frame
-    const displayCanvas = canvasRef.current;
-    if (displayCanvas && frames[0]) {
-      displayCanvas.width = video.videoWidth;
-      displayCanvas.height = video.videoHeight;
-      const displayCtx = displayCanvas.getContext("2d");
-      displayCtx?.drawImage(frames[0], 0, 0);
+    // Set display canvas size and draw first frame
+    const display = canvasRef.current;
+    if (display) {
+      display.width = w;
+      display.height = h;
+      const ctx = display.getContext("2d");
+      if (ctx && frames[0]) {
+        ctx.drawImage(frames[0], 0, 0);
+      }
     }
+
+    setReady(true);
   }, []);
 
-  // Display a specific frame — instant, no seeking
+  // Draw a specific frame index
   const showFrame = useCallback((index: number) => {
     const canvas = canvasRef.current;
     const frames = framesRef.current;
     if (!canvas || !frames.length) return;
 
-    const clampedIndex = Math.max(0, Math.min(frames.length - 1, index));
-    if (clampedIndex === currentFrameRef.current) return;
+    const clamped = Math.max(0, Math.min(frames.length - 1, index));
+    if (clamped === currentFrameRef.current) return;
 
-    currentFrameRef.current = clampedIndex;
+    currentFrameRef.current = clamped;
     const ctx = canvas.getContext("2d");
-    if (ctx && frames[clampedIndex]) {
-      ctx.drawImage(frames[clampedIndex], 0, 0);
+    if (ctx && frames[clamped]) {
+      ctx.drawImage(frames[clamped], 0, 0);
     }
   }, []);
 
-  // Extract frames when video loads
+  // Start extraction on mount
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onLoaded = () => {
-      extractFrames();
-    };
-
-    if (video.readyState >= 2) {
-      extractFrames();
-    } else {
-      video.addEventListener("loadeddata", onLoaded, { once: true });
-    }
-
-    return () => {
-      video.removeEventListener("loadeddata", onLoaded);
-    };
+    extractFrames().catch(() => {
+      // Fallback: if extraction fails, show nothing rather than break
+      console.warn("Frame extraction failed");
+    });
   }, [extractFrames]);
 
-  // Scroll handler — lerped for smoothness
+  // Scroll handler with lerped frame display
   useEffect(() => {
-    if (!framesReady) return;
+    if (!ready) return;
 
     const container = containerRef.current;
     if (!container) return;
@@ -124,20 +133,14 @@ export default function ScrollVideoSection() {
     let currentSmooth = 0;
 
     const tick = () => {
-      // Ultra-smooth lerp — low factor for cinematic easing
       const delta = targetFrame - currentSmooth;
-      // Adaptive lerp: slower when close (smooth stop), faster when far (responsive)
-      const lerpFactor = Math.abs(delta) > 5 ? 0.08 : 0.05;
-      currentSmooth += delta * lerpFactor;
+      currentSmooth += delta * 0.12;
 
-      // Snap when extremely close to avoid endless sub-pixel drift
       if (Math.abs(delta) < 0.01) {
         currentSmooth = targetFrame;
       }
 
-      const roundedFrame = Math.round(currentSmooth);
-      showFrame(roundedFrame);
-
+      showFrame(Math.round(currentSmooth));
       rafRef.current = requestAnimationFrame(tick);
     };
 
@@ -162,15 +165,13 @@ export default function ScrollVideoSection() {
 
     window.addEventListener("scroll", onScroll, { passive: true });
     rafRef.current = requestAnimationFrame(tick);
-
-    // Initial position
     onScroll();
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [framesReady, showFrame]);
+  }, [ready, showFrame]);
 
   return (
     <section
@@ -181,25 +182,14 @@ export default function ScrollVideoSection() {
     >
       {/* Sticky wrapper */}
       <div className="sticky top-0 h-[100dvh] flex items-center justify-center">
-        {/* Hidden video for frame extraction */}
-        <video
-          ref={videoRef}
-          muted
-          playsInline
-          preload="auto"
-          className="hidden"
-        >
-          <source src="/product-video.mp4" type="video/mp4" />
-        </video>
-
-        {/* Center canvas — displays pre-extracted frames */}
+        {/* Canvas — displays pre-extracted frames */}
         <div className="relative z-10 w-[320px] md:w-[380px] lg:w-[440px]">
           <canvas
             ref={canvasRef}
             className="w-full h-auto"
             style={{ aspectRatio: "1072 / 1928" }}
           />
-          {!framesReady && (
+          {!ready && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-[#C3592B]/30 border-t-[#C3592B] rounded-full animate-spin" />
             </div>

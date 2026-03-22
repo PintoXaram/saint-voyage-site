@@ -44,22 +44,22 @@ export default function HeroSection() {
             background: `
               radial-gradient(
                 ellipse 80% 70% at 50% 50%,
-                transparent 30%,
-                rgba(240, 240, 240, 0.4) 60%,
-                rgba(240, 240, 240, 0.85) 78%,
+                transparent 40%,
+                rgba(240, 240, 240, 0.2) 65%,
+                rgba(240, 240, 240, 0.6) 82%,
                 #F0F0F0 100%
               )
             `,
           }}
         />
         {/* Top edge fade */}
-        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#F0F0F0] to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#F0F0F0] to-transparent" />
         {/* Bottom edge fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F0F0F0] to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F0F0F0] to-transparent" />
         {/* Left edge fade */}
-        <div className="absolute top-0 bottom-0 left-0 w-40 bg-gradient-to-r from-[#F0F0F0] to-transparent" />
+        <div className="absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-[#F0F0F0] to-transparent" />
         {/* Right edge fade */}
-        <div className="absolute top-0 bottom-0 right-0 w-40 bg-gradient-to-l from-[#F0F0F0] to-transparent" />
+        <div className="absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-[#F0F0F0] to-transparent" />
       </div>
 
       {/* Hero Content — parallax wrapper */}
@@ -68,7 +68,7 @@ export default function HeroSection() {
         className="relative z-10 text-center px-6 max-w-3xl mx-auto"
       >
         <div>
-          <span className="inline-block text-[11px] uppercase tracking-[0.3em] font-semibold text-[#1A1A1A] mb-8 bg-white/60 backdrop-blur-md rounded-full px-5 py-2 shadow-[0_2px_20px_rgba(0,0,0,0.06)]">
+          <span className="inline-block text-[11px] uppercase tracking-[0.3em] font-semibold text-[#1A1A1A] mb-8 bg-white/70 backdrop-blur-md rounded-full px-5 py-2 shadow-[0_2px_20px_rgba(0,0,0,0.08)]">
             Fragrance as Architecture
           </span>
         </div>
@@ -82,7 +82,7 @@ export default function HeroSection() {
         </h1>
 
         <p
-          className="text-base md:text-lg text-[#1A1A1A]/80 leading-relaxed max-w-[50ch] mx-auto mb-10 font-normal bg-white/50 backdrop-blur-md rounded-xl px-6 py-3 inline-block shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
+          className="text-base md:text-lg text-[#1A1A1A]/80 leading-relaxed max-w-[50ch] mx-auto mb-10 font-normal bg-white/70 backdrop-blur-md rounded-xl px-6 py-3 inline-block shadow-[0_2px_20px_rgba(0,0,0,0.08)]"
         >
           Sculptural vessels and transportive fragrances.
           <br className="hidden md:block" />
